@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quiz — Meningites</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', Arial, sans-serif; background: #f0f4f8; color: #1a1a1a; min-height: 100vh; }
+  header { background: #1e3a5f; color: white; padding: 20px 30px; text-align: center; }
+  header h1 { font-size: 22px; margin-bottom: 4px; }
+  header p { font-size: 13px; opacity: 0.8; }
+  .quiz-container { max-width: 800px; margin: 30px auto; padding: 0 16px 60px; }
+  #startScreen { background: white; border-radius: 12px; padding: 40px; text-align: center; box-shadow: 0 2px 12px rgba(0,0,0,0.08); }
+  #startScreen h2 { font-size: 20px; color: #1e3a5f; margin-bottom: 12px; }
+  #startScreen p { font-size: 14px; color: #555; margin-bottom: 24px; line-height: 1.6; }
+  .progress-bar-bg { background: #dde3ea; border-radius: 8px; height: 8px; margin-bottom: 8px; }
+  .progress-bar-fill { background: #2563eb; height: 8px; border-radius: 8px; transition: width 0.4s ease; }
+  .progress-label { font-size: 12px; color: #666; margin-bottom: 20px; }
+  .question-card { background: white; border-radius: 12px; padding: 28px; box-shadow: 0 2px 12px rgba(0,0,0,0.08); margin-bottom: 16px; }
+  .question-number { font-size: 11px; font-weight: 700; text-transform: uppercase; color: #2563eb; letter-spacing: 1px; margin-bottom: 10px; }
+  .question-text { font-size: 15px; line-height: 1.65; color: #1a1a1a; margin-bottom: 22px; }
+  .options { display: flex; flex-direction: column; gap: 10px; }
+  .option-btn { background: #f7f9fc; border: 2px solid #dde3ea; border-radius: 8px; padding: 12px 16px; text-align: left; font-size: 14px; cursor: pointer; transition: background 0.15s, border-color 0.15s; line-height: 1.5; }
+  .option-btn:hover:not(:disabled) { background: #e8f0fe; border-color: #2563eb; }
+  .option-btn.correct { background: #d1fae5; border-color: #16a34a; color: #166534; }
+  .option-btn.wrong { background: #fee2e2; border-color: #dc2626; color: #991b1b; }
+  .option-btn:disabled { cursor: default; }
+  .explanation { display: none; background: #f0fdf4; border-left: 4px solid #16a34a; border-radius: 0 8px 8px 0; padding: 14px 16px; margin-top: 14px; font-size: 13px; line-height: 1.6; color: #166534; }
+  .explanation.show { display: block; }
+  .btn-next { display: none; margin-top: 18px; background: #2563eb; color: white; border: none; border-radius: 8px; padding: 12px 28px; font-size: 14px; font-weight: 600; cursor: pointer; transition: background 0.15s; }
+  .btn-next:hover { background: #1d4ed8; }
+  .btn-next.show { display: inline-block; }
+  .btn-primary { background: #2563eb; color: white; border: none; border-radius: 8px; padding: 14px 36px; font-size: 15px; font-weight: 600; cursor: pointer; transition: background 0.15s; }
+  .btn-primary:hover { background: #1d4ed8; }
+  #resultScreen { display: none; background: white; border-radius: 12px; padding: 40px; text-align: center; box-shadow: 0 2px 12px rgba(0,0,0,0.08); }
+  .score-circle { width: 120px; height: 120px; border-radius: 50%; background: #1e3a5f; color: white; display: flex; flex-direction: column; align-items: center; justify-content: center; margin: 0 auto 20px; }
+  .score-circle .score-num { font-size: 32px; font-weight: 700; }
+  .score-circle .score-denom { font-size: 13px; opacity: 0.8; }
+  #resultScreen h2 { font-size: 20px; color: #1e3a5f; margin-bottom: 10px; }
+  #resultScreen p { font-size: 14px; color: #555; margin-bottom: 24px; }
+  .stats-row { display: flex; justify-content: center; gap: 24px; margin-bottom: 28px; flex-wrap: wrap; }
+  .stat-box { background: #f7f9fc; border-radius: 8px; padding: 12px 20px; text-align: center; min-width: 90px; }
+  .stat-box .stat-val { font-size: 22px; font-weight: 700; }
+  .stat-box .stat-lbl { font-size: 11px; color: #888; margin-top: 2px; }
+  .stat-box.green .stat-val { color: #16a34a; }
+  .stat-box.red .stat-val { color: #dc2626; }
+  .stat-box.blue .stat-val { color: #2563eb; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Meningites</h1>
+  <p>Saúde do Adulto e do Idoso — Infectologia</p>
+</header>
+<div class="quiz-container">
+  <div id="startScreen">
+    <h2>Quiz de Revisão</h2>
+    <p>20 questões cobrindo etiologia, quadro clínico, análise do LCR, tratamento, quimioprofilaxia e complicações das meningites bacteriana, viral e tuberculosa.<br><br>Responda cada questão e veja a explicação antes de avançar.</p>
+    <button class="btn-primary" onclick="startQuiz()">Começar Quiz</button>
+  </div>
+  <div id="quizArea" style="display:none;">
+    <div class="progress-bar-bg"><div class="progress-bar-fill" id="progressBar" style="width:0%"></div></div>
+    <div class="progress-label" id="progressLabel">Questão 0 de 20</div>
+    <div class="question-card" id="questionCard">
+      <div class="question-number" id="questionNumber"></div>
+      <div class="question-text" id="questionText"></div>
+      <div class="options" id="optionsContainer"></div>
+      <div class="explanation" id="explanation"></div>
+      <button class="btn-next" id="btnNext" onclick="nextQuestion()">Próxima questão →</button>
+    </div>
+  </div>
+  <div id="resultScreen">
+    <div class="score-circle">
+      <span class="score-num" id="scoreFinal">0</span>
+      <span class="score-denom" id="scoreDenom">de 20</span>
+    </div>
+    <h2 id="resultTitle"></h2>
+    <p id="resultMsg"></p>
+    <div class="stats-row">
+      <div class="stat-box green"><div class="stat-val" id="statCorrect">0</div><div class="stat-lbl">Acertos</div></div>
+      <div class="stat-box red"><div class="stat-val" id="statWrong">0</div><div class="stat-lbl">Erros</div></div>
+      <div class="stat-box blue"><div class="stat-val" id="statPct">0%</div><div class="stat-lbl">Aproveitamento</div></div>
+    </div>
+    <button class="btn-primary" onclick="restartQuiz()">Refazer Quiz</button>
+  </div>
+</div>
+<script>
+const rawQuestions = [
+  {
+    question: "Qual é a principal via de transmissão da meningite meningocócica?",
+    options: [
+      "Gotículas respiratórias (secreções nasofaríngeas) — transmissão pessoa a pessoa em contato próximo",
+      "Via fecal-oral por água contaminada com meningococo",
+      "Picada de vetor (mosquito Aedes aegypti)",
+      "Contato com sangue ou líquidos corporais contaminados",
+      "Via aerossol com partículas menores de 5 μm (como tuberculose)"
+    ],
+    correctIndex: 0,
+    explanation: "A N. meningitidis é transmitida por gotículas respiratórias (>5 μm) em contato próximo (<1 metro por >4 horas). O portador nasofaríngeo assintomático (5–30% da população) é o principal reservatório. A transmissão exige contato próximo e prolongado — por isso a quimioprofilaxia é indicada apenas para contatos próximos, não para toda a comunidade."
+  },
+  {
+    question: "A tríade clínica clássica da meningite inclui:",
+    options: [
+      "Febre + cefaleia intensa de início súbito + rigidez de nuca (síndrome meníngea)",
+      "Febre + vômitos em jato + diarreia aquosa",
+      "Cefaleia + fotofobia + tosse produtiva",
+      "Febre + convulsão + perda de consciência",
+      "Confusão mental + febre + disartria (síndrome de Wernicke)"
+    ],
+    correctIndex: 0,
+    explanation: "A tríade clássica da meningite é: febre (presente em >95%) + cefaleia intensa de início súbito + rigidez de nuca. Podem acompanhar: fotofobia, fonofobia, náuseas, vômitos, alteração do nível de consciência. A tríade completa está presente em apenas 44% dos casos, mas a ausência de todos os três sintomas tem alto valor preditivo negativo para meningite bacteriana."
+  },
+  {
+    question: "O sinal de Kernig é avaliado com o paciente em decúbito dorsal e é positivo quando:",
+    options: [
+      "Há resistência e dor à extensão passiva do joelho com a coxa fletida a 90°",
+      "Há flexão involuntária dos joelhos e quadris ao elevar passivamente o pescoço",
+      "Há dor lombar com irradiação para MMII à palpação da coluna",
+      "Há assimetria dos reflexos patelares com hiperreflexia unilateral",
+      "Há ptose palpebral com anisocoria ao elevar passivamente a cabeça"
+    ],
+    correctIndex: 0,
+    explanation: "O sinal de Kernig avalia a irritação meníngea: com o paciente em decúbito dorsal, flexiona-se o quadril a 90° e tenta-se estender passivamente o joelho. Positivo quando há resistência à extensão (o paciente não consegue estender além de 135°) por contração reflexa dos isquiotibiais para evitar a tensão nas meninges inflamadas. O sinal de Brudzinski é a flexão reflexa dos joelhos ao fletir passivamente o pescoço."
+  },
+  {
+    question: "No LCR, qual padrão é típico de meningite bacteriana?",
+    options: [
+      "Pleocitose com predomínio de polimorfonucleares + glicose <45 mg/dL + proteínas elevadas + aspecto turvo",
+      "Pleocitose com predomínio de mononucleares + glicose normal + proteínas levemente elevadas",
+      "LCR xantocrômico com eritrócitos e proteínas muito elevadas (hemorrágico)",
+      "LCR cristalino com glicose normal e proteínas normais (normal)",
+      "Pleocitose mista com eosinófilos e glicose levemente reduzida"
+    ],
+    correctIndex: 0,
+    explanation: "LCR na meningite bacteriana: aspecto turvo/purulento, pressão elevada, célularidade >1.000 células/mm³ com predomínio de PMN (>80%), glicose <45 mg/dL (ou razão LCR/sangue <0,4), proteínas >100 mg/dL, lactato >35 mg/dL. Gram positivo em 60–90% (não tratados). O lactato é o melhor discriminador entre bacteriana e viral."
+  },
+  {
+    question: "Qual valor de lactato no LCR diferencia meningite bacteriana de viral?",
+    options: [
+      "Lactato >35 mg/dL sugere fortemente meningite bacteriana",
+      "Lactato >10 mg/dL já indica meningite bacteriana",
+      "Lactato normal (<10 mg/dL) indica meningite bacteriana",
+      "O lactato no LCR não tem valor diagnóstico relevante",
+      "Lactato >20 mg/dL é patognomônico de meningite tuberculosa"
+    ],
+    correctIndex: 0,
+    explanation: "O lactato no LCR é o melhor marcador bioquímico para distinguir meningite bacteriana de viral: >35 mg/dL tem sensibilidade ~90% e especificidade ~98% para bacteriana. Na meningite viral, o lactato é normal ou levemente elevado (<25 mg/dL). O aumento do lactato reflete o metabolismo anaeróbico das bactérias e a isquemia tecidual por vasculite meníngea."
+  },
+  {
+    question: "O padrão do LCR típico de meningite viral (asséptica) é:",
+    options: [
+      "Predomínio de mononucleares, glicose normal, proteínas levemente elevadas, aspecto límpido",
+      "Predomínio de polimorfonucleares, glicose muito baixa, aspecto turvo",
+      "Xantocromia, glicose normal e eritrócitos (hemorrágico)",
+      "Predomínio linfomononuclear, glicose muito baixa (<20 mg/dL), proteínas muito elevadas",
+      "Eosinófilos + glicose normal + proteínas elevadas (meningite parasitária)"
+    ],
+    correctIndex: 0,
+    explanation: "LCR na meningite viral: límpido (água de rocha), pressão normal ou levemente elevada, células 10–500/mm³ com predomínio de mononucleares (linfócitos), glicose normal (≥45 mg/dL), proteínas levemente elevadas (50–150 mg/dL), lactato normal (<25 mg/dL). Benignidade clínica: autolimitada em 1–2 semanas, sem tratamento específico (exceto HSV: aciclovir)."
+  },
+  {
+    question: "Qual é o padrão do LCR na meningite tuberculosa?",
+    options: [
+      "Predomínio de mononucleares + glicose muito baixa + proteínas muito elevadas + aspecto xantocrômico",
+      "Predomínio de polimorfonucleares + glicose normal + proteínas leve aumento",
+      "LCR transparente sem alterações celulares (normal)",
+      "Predomínio linfocitário + glicose normal + proteínas normais (viral leve)",
+      "Células mesoteliais + histiócitos + glicose elevada (neoplásico)"
+    ],
+    correctIndex: 0,
+    explanation: "LCR na meningite tuberculosa: aspecto límpido ou levemente xantocrômico, pleocitose moderada (100–500/mm³) com predomínio de mononucleares (linfócitos), glicose muito baixa (<45 mg/dL, pode chegar a <20), proteínas muito elevadas (>100 mg/dL, frequentemente >200), lactato elevado. O PCR para M. tuberculosis no LCR e a adenosina deaminase (ADA) ajudam no diagnóstico."
+  },
+  {
+    question: "Qual deve ser a ordem correta das condutas na meningite bacteriana aguda?",
+    options: [
+      "Isolamento → acesso venoso + hemoculturas → dexametasona → antibiótico específico",
+      "Antibiótico imediato → tomografia de crânio → punção lombar → dexametasona",
+      "Punção lombar → antibiótico → dexametasona → isolamento do paciente",
+      "Tomografia → dexametasona → antibiótico → punção lombar → hemoculturas",
+      "Isolamento → antibiótico → dexametasona → punção lombar → hemoculturas"
+    ],
+    correctIndex: 0,
+    explanation: "Sequência correta: (1) Isolamento respiratório (gotícula); (2) Acesso venoso + coleta de hemoculturas (antes do ATB se possível); (3) Dexametasona IV 0,15 mg/kg 6/6h — idealmente 30 min ANTES do antibiótico; (4) Antibiótico específico. A TC craniana só é indicada antes da punção se houver sinal focal, papiledema ou Glasgow <10 — não deve atrasar o antibiótico."
+  },
+  {
+    question: "A dexametasona deve ser administrada na meningite bacteriana:",
+    options: [
+      "30 minutos antes ou no máximo junto com a primeira dose do antibiótico",
+      "Após 24 horas de antibiótico para evitar interação farmacodinâmica",
+      "Somente se houver convulsão refratária ao tratamento anticonvulsivante",
+      "Apenas em crianças menores de 5 anos com meningite pneumocócica",
+      "Somente após identificação do agente etiológico pelo Gram ou cultura"
+    ],
+    correctIndex: 0,
+    explanation: "A dexametasona reduz a liberação de citocinas inflamatórias induzidas pela lise bacteriana pelo antibiótico → diminui edema cerebral, vasculite e complicações neurológicas (surdez, hidrocefalia). Para ser eficaz, deve ser administrada ANTES ou simultaneamente com o antibiótico. Se dada depois (>4h após o ATB), perde o benefício. Dose: 0,15 mg/kg IV 6/6h por 4 dias."
+  },
+  {
+    question: "Qual antibiótico é de escolha para meningite por N. meningitidis sensível?",
+    options: [
+      "Penicilina G cristalina IV (ou ampicilina IV) — meningococo é altamente sensível à penicilina",
+      "Vancomicina IV + rifampicina oral por 14 dias",
+      "Ciprofloxacino IV por 14 dias",
+      "Ceftriaxona IV + metronidazol IV (cobertura anaeróbia)",
+      "Cloranfenicol IM em dose única (reservado para meningite meningocócica)"
+    ],
+    correctIndex: 0,
+    explanation: "N. meningitidis é altamente sensível à penicilina G cristalina (4 milhões UI IV a cada 4 horas) ou ampicilina. Na dúvida diagnóstica (não se sabe o agente), usa-se ceftriaxona empiricamente (cobre meningococo, pneumococo e H. influenzae). Quando o agente e a sensibilidade são confirmados, pode-se estreitar para penicilina. Duração: 7 dias para meningococo, 10–14 dias para pneumococo."
+  },
+  {
+    question: "A quimioprofilaxia do contato próximo de caso de doença meningocócica é feita com:",
+    options: [
+      "Rifampicina 600 mg VO 12/12h por 2 dias (adultos) OU ciprofloxacino 500 mg VO dose única",
+      "Amoxicilina 500 mg VO por 5 dias para todos os contatos domiciliares",
+      "Penicilina V oral 500 mg por 7 dias (como a profilaxia do estreptococo)",
+      "Ceftriaxona IM 250 mg dose única para todos os contatos (qualquer faixa etária)",
+      "Azitromicina 1 g VO dose única para adultos imunocompetentes"
+    ],
+    correctIndex: 0,
+    explanation: "Quimioprofilaxia da meningite meningocócica: rifampicina 600 mg VO 12/12h × 2 dias (adultos; 10 mg/kg/dose para crianças); alternativas: ciprofloxacino 500 mg VO dose única (adultos, não gestantes), ceftriaxona 250 mg IM dose única (adultos; 125 mg para crianças <15 anos — preferida na gestação). Indicada para contatos próximos nas últimas 7 dias antes do início dos sintomas."
+  },
+  {
+    question: "'Contato próximo' para indicação de quimioprofilaxia de meningite meningocócica é:",
+    options: [
+      "Conviventes domiciliares, parceiros sexuais e exposição a secreções (<1 metro por >4 horas nas últimas 7 dias)",
+      "Qualquer pessoa que esteve no mesmo quarteirão do paciente",
+      "Todo o colégio ou universidade onde o paciente frequentava",
+      "Profissionais de saúde que participaram do primeiro atendimento de emergência",
+      "Colegas de trabalho no mesmo andar do prédio"
+    ],
+    correctIndex: 0,
+    explanation: "Contato próximo = exposição a secreções nasofaríngeas ou permanência <1 metro por >4 horas contínuas nos 7 dias antes da internação do caso. Inclui: domiciliares, parceiros sexuais, colegas de quarto, colegas próximos em berçário/creche. NÃO inclui: vizinhos sem contato direto, colegas de trabalho distantes, profissionais de saúde sem contato com secreções (exceto ressuscitação boca a boca ou intubação sem EPI)."
+  },
+  {
+    question: "Petéquias e púrpura não palpável em paciente com meningite indicam:",
+    options: [
+      "Vasculite séptica meningocócica com possível CIVD — sinal de gravidade máxima",
+      "Reação alérgica à penicilina iniciada antes do diagnóstico",
+      "Dengue hemorrágico concomitante à meningite bacteriana",
+      "Plaquetopenia por aplasia medular medicamentosa",
+      "Hemólise intravascular por endotoxina meningocócica"
+    ],
+    correctIndex: 0,
+    explanation: "Petéquias e púrpura são sinais da meningococcemia (bacteremia meningocócica): endotoxinas do meningococo ativam a cascata de coagulação → CIVD → microtrombos e hemorragia → petéquias (que podem evoluir para púrpura fulminans com necrose tissular). É sinal de gravidade extrema — risco de choque séptico. Isolamento imediato, antibiótico e UTI sem demora."
+  },
+  {
+    question: "Qual é o principal agente de meningite viral (meningite asséptica) no Brasil?",
+    options: [
+      "Enterovírus (Echovirus e Coxsackie) — responsáveis por >80% das meningites virais",
+      "Vírus do herpes simples tipo 1 (HSV-1)",
+      "Citomegalovírus (CMV)",
+      "Vírus da caxumba (paramixovírus)",
+      "Adenovírus (sorotipo 3 e 7)"
+    ],
+    correctIndex: 0,
+    explanation: "Enterovírus (do gênero Enterovirus — Echovirus, Coxsackievirus A e B) são responsáveis por >80% das meningites virais em qualquer faixa etária. Transmissão fecal-oral. Pico de incidência: verão/outono. Autolimitada (7–14 dias), tratamento de suporte. O HSV causa encefalite mais frequentemente que meningite — quando causa meningite, é geralmente HSV-2 (primoinfecção genital)."
+  },
+  {
+    question: "A meningite por Listeria monocytogenes é mais frequente em qual grupo?",
+    options: [
+      "Idosos (>65 anos), gestantes, imunossuprimidos (HIV, transplantados) e neonatos",
+      "Adolescentes e adultos jovens imunocompetentes sem comorbidades",
+      "Crianças não vacinadas entre 2 e 5 anos de idade",
+      "Pacientes com HIV e contagem de CD4 <200 células/mm³",
+      "Trabalhadores rurais em áreas com alta densidade de carrapatos"
+    ],
+    correctIndex: 0,
+    explanation: "Listeria monocytogenes causa meningite nos extremos de idade e imunossuprimidos: neonatos (3ª causa de meningite neonatal), idosos >65 anos, grávidas (risco de listeriose materno-fetal), imunossuprimidos (HIV, transplantados, uso de corticosteroide). A ceftriaxona NÃO cobre Listeria — usar ampicilina + aminoglicosídeo. O esquema empírico em >50 anos deve incluir ampicilina."
+  },
+  {
+    question: "A tríade de Cushing na hipertensão intracraniana grave indica:",
+    options: [
+      "Bradicardia + hipertensão arterial + alteração do padrão respiratório — sinal de herniação iminente",
+      "Taquicardia + hipotensão + hiperventilação (choque distributivo)",
+      "Febre + rigidez + alteração de consciência (tríade meníngea)",
+      "Cefaleia + vômitos em jato + papiledema (HTIC crônica)",
+      "Bradicardia + hipotensão + apneia (reflexo de Bezold-Jarisch)"
+    ],
+    correctIndex: 0,
+    explanation: "A tríade de Cushing é sinal de alerta de herniação cerebral iminente por HTIC grave: bradicardia reflexa (resposta do barorreceptor à hipertensão) + hipertensão arterial sistêmica (vasoconstrição compensatória para perfundir o cérebro) + alteração respiratória (irregular, Cheyne-Stokes). Requer intervenção urgente: manitol 20%, decúbito 30°, hiperventilação moderada e neurocirurgia."
+  },
+  {
+    question: "Na meningite pneumocócica com pneumococo sensível à penicilina, o antibiótico de escolha é:",
+    options: [
+      "Penicilina G cristalina IV (ou ceftriaxona IV) — tratamento por 10–14 dias",
+      "Vancomicina IV + rifampicina oral por 21 dias",
+      "Ampicilina-sulbactam IV por 14 dias",
+      "Meropeném IV por 14 dias (reservado para germes multirresistentes)",
+      "Linezolida IV por 10 dias (alternativa para MRSA)"
+    ],
+    correctIndex: 0,
+    explanation: "S. pneumoniae sensível à penicilina (CIM <0,1 mg/L): Penicilina G cristalina IV ou ceftriaxona por 10–14 dias. Se houver resistência à penicilina (CIM ≥0,1 mg/L): vancomicina + ceftriaxona. No Brasil, a resistência do pneumococo à penicilina está aumentando — empiricamente usa-se ceftriaxona; após antibiograma, estreita-se conforme sensibilidade."
+  },
+  {
+    question: "O sinal de Brudzinski positivo é avaliado por:",
+    options: [
+      "Flexão passiva do pescoço em decúbito dorsal → flexão reflexa involuntária dos joelhos e quadris",
+      "Extensão passiva do joelho com coxa fletida a 90° → resistência e dor",
+      "Palpação profunda da região lombar com irradiação para MMII",
+      "Hiperextensão passiva do pescoço com o paciente sentado",
+      "Compressão bilateral das articulações coxofemorais com o paciente em decúbito lateral"
+    ],
+    correctIndex: 0,
+    explanation: "O sinal de Brudzinski avalia irritação meníngea: com o paciente em decúbito dorsal, o examinador eleva passivamente a cabeça (flexiona o pescoço). Positivo quando os joelhos e quadris se fletam involuntariamente (resposta reflexa para reduzir a tensão nas meninges inflamadas). Junto com o sinal de Kernig, constitui os principais sinais meníngeos da semiologia clássica."
+  },
+  {
+    question: "Por que a tomografia de crânio NÃO deve retardar o início do antibiótico na meningite bacteriana?",
+    options: [
+      "A meningite bacteriana mata em horas — cada hora de atraso aumenta a mortalidade em 10–20%",
+      "A TC craniana é sempre normal na meningite bacteriana inicial",
+      "O antibiótico facilita a interpretação da TC ao reduzir o edema",
+      "A radiação da TC é prejudicial em pacientes já com dano neurológico",
+      "A TC não está indicada na meningite bacteriana — só é feita após punção"
+    ],
+    correctIndex: 0,
+    explanation: "Na meningite bacteriana, o atraso no antibiótico aumenta significativamente a mortalidade e as sequelas. A TC é indicada antes da punção APENAS se: sinal neurológico focal, papiledema, convulsão recente, Glasgow <10 ou imunossupressão (risco de herniação). Nesses casos, coletar hemoculturas, dar dexametasona + antibiótico IMEDIATAMENTE e só depois fazer a TC. Nunca deixar a TC retardar o tratamento."
+  },
+  {
+    question: "Estudante universitário de 19 anos, sem vacinação meningocócica, com febre 39,5°C, cefaleia intensa, rigidez de nuca, vômitos e petéquias nos MMII. LCR turvo. Conduta imediata?",
+    options: [
+      "Isolamento respiratório + hemoculturas + dexametasona IV + ceftriaxona IV imediatamente",
+      "Aguardar resultado do Gram do LCR antes de iniciar qualquer antibiótico",
+      "Tomografia de crânio antes de qualquer conduta medicamentosa",
+      "Aciclovir IV + ceftriaxona enquanto aguarda culturas",
+      "Dexametasona isolada enquanto se aguarda identificação do agente"
+    ],
+    correctIndex: 0,
+    explanation: "Meningite meningocócica grave (petéquias + jovem não vacinado + síndrome meníngea + LCR turvo): EMERGÊNCIA. Conduta: (1) Isolamento respiratório por gotícula; (2) Hemoculturas (não atrasar para TC); (3) Dexametasona 0,15 mg/kg IV; (4) Ceftriaxona 2 g IV imediatamente. Notificar imediatamente e iniciar investigação de contatos para quimioprofilaxia. Cada minuto conta."
+  }
+];
+
+function shuffleQuestion(q) {
+  const correctText = q.options[q.correctIndex];
+  const shuffled = [...q.options];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return { ...q, options: shuffled, correctIndex: shuffled.indexOf(correctText) };
+}
+
+function prepareQuestions() {
+  const shuffledQs = [...rawQuestions];
+  for (let i = shuffledQs.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffledQs[i], shuffledQs[j]] = [shuffledQs[j], shuffledQs[i]];
+  }
+  return shuffledQs.map(shuffleQuestion);
+}
+
+let questions = [];
+let currentIndex = 0;
+let score = 0;
+let answered = 0;
+
+function startQuiz() {
+  questions = prepareQuestions();
+  currentIndex = 0; score = 0; answered = 0;
+  document.getElementById('startScreen').style.display = 'none';
+  document.getElementById('quizArea').style.display = 'block';
+  renderQuestion();
+}
+
+function renderQuestion() {
+  const q = questions[currentIndex];
+  const total = questions.length;
+  const pct = ((currentIndex) / total) * 100;
+  document.getElementById('progressBar').style.width = pct + '%';
+  document.getElementById('progressLabel').textContent = `Questão ${currentIndex + 1} de ${total}`;
+  document.getElementById('questionNumber').textContent = `Questão ${currentIndex + 1}`;
+  document.getElementById('questionText').textContent = q.question;
+  const container = document.getElementById('optionsContainer');
+  container.innerHTML = '';
+  q.options.forEach((opt, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'option-btn';
+    btn.textContent = opt;
+    btn.onclick = () => selectAnswer(i);
+    container.appendChild(btn);
+  });
+  document.getElementById('explanation').classList.remove('show');
+  document.getElementById('explanation').textContent = '';
+  document.getElementById('btnNext').classList.remove('show');
+}
+
+function selectAnswer(selectedIndex) {
+  const q = questions[currentIndex];
+  const buttons = document.querySelectorAll('.option-btn');
+  buttons.forEach(btn => btn.disabled = true);
+  if (selectedIndex === q.correctIndex) { buttons[selectedIndex].classList.add('correct'); score++; }
+  else { buttons[selectedIndex].classList.add('wrong'); buttons[q.correctIndex].classList.add('correct'); }
+  answered++;
+  const exp = document.getElementById('explanation');
+  exp.textContent = q.explanation;
+  exp.classList.add('show');
+  const btnNext = document.getElementById('btnNext');
+  btnNext.textContent = currentIndex < questions.length - 1 ? 'Próxima questão →' : 'Ver resultado';
+  btnNext.classList.add('show');
+}
+
+function nextQuestion() {
+  currentIndex++;
+  if (currentIndex < questions.length) { renderQuestion(); } else { showResult(); }
+}
+
+function showResult() {
+  document.getElementById('quizArea').style.display = 'none';
+  const result = document.getElementById('resultScreen');
+  result.style.display = 'block';
+  const total = questions.length;
+  const pct = Math.round((score / total) * 100);
+  document.getElementById('scoreFinal').textContent = score;
+  document.getElementById('scoreDenom').textContent = `de ${total}`;
+  document.getElementById('statCorrect').textContent = score;
+  document.getElementById('statWrong').textContent = total - score;
+  document.getElementById('statPct').textContent = pct + '%';
+  let title, msg;
+  if (pct >= 90) { title = 'Excelente!'; msg = 'Domínio completo do conteúdo. Você está preparado para a prova.'; }
+  else if (pct >= 70) { title = 'Muito bom!'; msg = 'Bom domínio geral. Revise os pontos onde errou antes da prova.'; }
+  else if (pct >= 50) { title = 'Razoável'; msg = 'Ainda há pontos a consolidar. Releia o relatório e refaça o quiz.'; }
+  else { title = 'Precisa revisar'; msg = 'Recomendo reler o relatório completo antes de tentar novamente.'; }
+  document.getElementById('resultTitle').textContent = title;
+  document.getElementById('resultMsg').textContent = msg;
+}
+
+function restartQuiz() {
+  document.getElementById('resultScreen').style.display = 'none';
+  document.getElementById('startScreen').style.display = 'block';
+}
+</script>
+</body>
+</html>
